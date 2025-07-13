@@ -64,7 +64,8 @@ fn markdown_to_html(markdown: &str) -> Result<String> {
     // Syntect configuration
     let ps = SyntaxSet::load_defaults_newlines();
     let ts = ThemeSet::load_defaults();
-    let theme = &ts.themes["Solarized (dark)"];
+    // Use a darker theme for better contrast in PDF
+    let theme = &ts.themes["base16-ocean.dark"];
     
     let mut code_block = String::new();
     let mut in_code_block = false;
@@ -206,7 +207,7 @@ fn get_html_template() -> String {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap');
         
         * {
             margin: 0;
@@ -272,34 +273,37 @@ fn get_html_template() -> String {
         }
         
         code.inline-code {
-            font-family: 'Consolas', 'Monaco', monospace;
-            background-color: #f4f4f5;
-            color: #e74c3c;
+            font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+            background-color: #2b303b;
+            color: #bf616a;
             padding: 0.2em 0.4em;
-            border-radius: 3px;
-            font-size: 0.9em;
+            border-radius: 4px;
+            font-size: 0.85em;
+            border: 1px solid #4f5b66;
         }
         
         .code-block {
-            background-color: #1e1e1e;
+            background-color: #2b303b;
             border-radius: 8px;
             padding: 1.5em;
             margin: 1.5em 0;
             overflow-x: auto;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #4f5b66;
         }
         
         .code-block pre {
             margin: 0;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 0.9em;
-            line-height: 1.6;
+            font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+            font-size: 0.85em;
+            line-height: 1.5;
         }
         
         .code-block code {
-            color: #d4d4d4;
+            color: #c0c5ce;
             background: none;
             padding: 0;
+            font-family: inherit;
         }
         
         blockquote {
@@ -360,6 +364,35 @@ fn get_html_template() -> String {
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
+        /* Dark theme specific enhancements */
+        .code-block pre code {
+            text-shadow: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Ensure proper contrast for syntax highlighting */
+        .code-block .hljs-comment,
+        .code-block .hljs-quote {
+            color: #65737e !important;
+        }
+        
+        .code-block .hljs-keyword,
+        .code-block .hljs-selector-tag,
+        .code-block .hljs-literal {
+            color: #b48ead !important;
+        }
+        
+        .code-block .hljs-string,
+        .code-block .hljs-title {
+            color: #a3be8c !important;
+        }
+        
+        .code-block .hljs-number,
+        .code-block .hljs-symbol {
+            color: #d08770 !important;
+        }
+        
         @media print {
             body {
                 font-size: 16px;
@@ -375,6 +408,13 @@ fn get_html_template() -> String {
             
             .code-block {
                 page-break-inside: avoid;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            
+            code.inline-code {
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
             }
         }
     </style>
