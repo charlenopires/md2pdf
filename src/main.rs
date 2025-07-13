@@ -4,6 +4,7 @@ use headless_chrome::{Browser, LaunchOptions};
 use pulldown_cmark::{Event, Options, Parser as MdParser, Tag};
 use std::fs;
 use std::path::PathBuf;
+use std::time::Duration;
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style, ThemeSet};
 use syntect::html::{styled_line_to_highlighted_html, IncludeBackground};
@@ -38,13 +39,13 @@ fn main() -> Result<()> {
 
     // Read the Markdown file
     let markdown_content = fs::read_to_string(&args.input)
-        .with_context(|| format!("Error reading file: {:?}", args.input))?
+        .with_context(|| format!("Error reading file: {:?}", args.input))?;
 
     // Convert Markdown to HTML
     let html_content = markdown_to_html(&markdown_content)?;
 
     // Generate the PDF
-    generate_pdf(&html_content, &output_path, args.margin)?
+    generate_pdf(&html_content, &output_path, args.margin)?;
 
     println!("✅ PDF generated successfully: {:?}", output_path);
     Ok(())
@@ -182,7 +183,7 @@ fn highlight_code(code: &str, lang: &str, ps: &SyntaxSet, theme: &syntect::highl
     for line in LinesWithEndings::from(code) {
         let ranges: Vec<(Style, &str)> = highlighter
             .highlight_line(line, ps)
-            .context("Error highlighting line")?
+            .context("Error highlighting line")?;
         let html = styled_line_to_highlighted_html(&ranges[..], IncludeBackground::No)?;
         highlighted.push_str(&html);
     }
@@ -382,7 +383,7 @@ fn get_html_template() -> String {
 }
 
 #[tokio::main]
-async fn generate_pdf(html: &str, output_path: &PathBuf, margin: u32) -> Result<()> {
+async fn generate_pdf(html: &str, output_path: &PathBuf, _margin: u32) -> Result<()> {
     // Save temporary HTML
     let temp_html = output_path.with_extension("html");
     fs::write(&temp_html, html)?;
@@ -399,34 +400,16 @@ async fn generate_pdf(html: &str, output_path: &PathBuf, margin: u32) -> Result<
     let tab = browser.new_tab()?;
     
     // Load the HTML
-    let file_url = format!("file://{}", temp_html.display());
+    let temp_html_abs = fs::canonicalize(&temp_html)?;
+    let file_url = format!("file:///{}", temp_html_abs.display().to_string().replace(" ", "%20"));
     tab.navigate_to(&file_url)?;
     tab.wait_until_navigated()?;
     
     // Wait for content to load
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    tokio::time::sleep(Duration::from_secs(2)).await;
     
-    // Generate the PDF
-    let pdf_options = headless_chrome::protocol::cdp::Page::PrintToPdfParams {
-        landscape: Some(false),
-        display_header_footer: Some(false),
-        print_background: Some(true),
-        scale: Some(1.0),
-        paper_width: Some(8.5),
-        paper_height: Some(11.0),
-        margin_top: Some(margin as f64 / 96.0),
-        margin_bottom: Some(margin as f64 / 96.0),
-        margin_left: Some(margin as f64 / 96.0),
-        margin_right: Some(margin as f64 / 96.0),
-        page_ranges: None,
-        ignore_invalid_page_ranges: None,
-        header_template: None,
-        footer_template: None,
-        prefer_css_page_size: Some(true),
-        transfer_mode: None,
-    };
-    
-    let pdf_data = tab.print_to_pdf(Some(pdf_options))?;
+    // Generate the PDF with default options
+    let pdf_data = tab.print_to_pdf(None)?;
     fs::write(output_path, pdf_data)?;
     
     // Remove temporary file
