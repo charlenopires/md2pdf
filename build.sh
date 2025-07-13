@@ -1,136 +1,136 @@
 #!/bin/bash
 
-# Script de build para o conversor Markdown to PDF
+# Build script for Markdown to PDF converter
 
-echo "🔨 Compilando Markdown to PDF..."
+echo "🔨 Compiling Markdown to PDF..."
 
-# Verifica se o Rust está instalado
+# Check if Rust is installed
 if ! command -v cargo &> /dev/null; then
-    echo "❌ Erro: Rust não está instalado!"
-    echo "Por favor, instale em: https://rustup.rs/"
+    echo "❌ Error: Rust is not installed!"
+    echo "Please install from: https://rustup.rs/"
     exit 1
 fi
 
-# Verifica se o Chrome/Chromium está instalado
+# Check if Chrome/Chromium is installed
 if ! command -v google-chrome &> /dev/null && ! command -v chromium &> /dev/null && ! command -v chromium-browser &> /dev/null; then
-    echo "⚠️  Aviso: Chrome/Chromium não encontrado!"
-    echo "O aplicativo precisa do Chrome para funcionar."
+    echo "⚠️  Warning: Chrome/Chromium not found!"
+    echo "The application needs Chrome to work."
     echo ""
-    echo "Instale com:"
+    echo "Install with:"
     echo "  Ubuntu/Debian: sudo apt install chromium-browser"
     echo "  Fedora: sudo dnf install chromium"
     echo "  Arch: sudo pacman -S chromium"
     echo ""
 fi
 
-# Cria diretório do projeto se não existir
+# Create project directory if it doesn't exist
 PROJECT_DIR="markdown-to-pdf"
 if [ ! -d "$PROJECT_DIR" ]; then
-    echo "📁 Criando estrutura do projeto..."
+    echo "📁 Creating project structure..."
     cargo new "$PROJECT_DIR" --bin
     cd "$PROJECT_DIR"
 else
     cd "$PROJECT_DIR"
 fi
 
-# Cria diretório src se não existir
+# Create src directory if it doesn't exist
 mkdir -p src
 
-# Verifica se os arquivos foram criados
+# Check if files were created
 if [ ! -f "Cargo.toml" ] || [ ! -f "src/main.rs" ]; then
-    echo "❌ Erro: Arquivos do projeto não encontrados!"
-    echo "Certifique-se de que Cargo.toml e src/main.rs existem."
+    echo "❌ Error: Project files not found!"
+    echo "Make sure Cargo.toml and src/main.rs exist."
     exit 1
 fi
 
-# Compila em modo release
-echo "🚀 Compilando em modo release..."
+# Compile in release mode
+echo "🚀 Compiling in release mode..."
 cargo build --release
 
 if [ $? -eq 0 ]; then
-    echo "✅ Compilação concluída com sucesso!"
+    echo "✅ Compilation completed successfully!"
     
-    # Strip do executável para reduzir tamanho (apenas Linux/Mac)
+    # Strip executable to reduce size (Linux/Mac only)
     if [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "🔧 Otimizando executável..."
+        echo "🔧 Optimizing executable..."
         strip target/release/md2pdf
     fi
     
     echo ""
-    echo "📍 Executável criado em: target/release/md2pdf"
+    echo "📍 Executable created at: target/release/md2pdf"
     echo ""
-    echo "📖 Como usar:"
+    echo "📖 How to use:"
     echo "  ./target/release/md2pdf -i arquivo.md"
     echo "  ./target/release/md2pdf -i arquivo.md -o saida.pdf"
     echo "  ./target/release/md2pdf -i arquivo.md -m 75"
     echo ""
-    echo "💡 Dica: Copie o executável para um local no PATH:"
+    echo "💡 Tip: Copy the executable to a PATH location:"
     echo "  sudo cp target/release/md2pdf /usr/local/bin/"
     
-    # Cria exemplo de teste
-    echo "📝 Criando arquivo de exemplo..."
+    # Create test example
+    echo "📝 Creating example file..."
     cat > exemplo.md << 'EOF'
-# Exemplo de Markdown
+# Markdown Example
 
-Este é um documento de **exemplo** para testar o conversor.
+This is an **example** document to test the converter.
 
-## Funcionalidades
+## Features
 
-### Formatação de Texto
+### Text Formatting
 
-- **Negrito**
-- *Itálico*
-- `Código inline`
+- **Bold**
+- *Italic*
+- `Inline code`
 
-### Bloco de Código
+### Code Block
 
 ```python
 def hello_world():
-    """Função de exemplo com syntax highlighting"""
-    print("Olá, mundo!")
+    """Example function with syntax highlighting"""
+    print("Hello, world!")
     return 42
 
-# Chamando a função
-resultado = hello_world()
-print(f"O resultado é: {resultado}")
+# Calling the function
+result = hello_world()
+print(f"The result is: {result}")
 ```
 
-### Lista Ordenada
+### Ordered List
 
-1. Primeiro item
-2. Segundo item
+1. First item
+2. Second item
    - Subitem 2.1
    - Subitem 2.2
-3. Terceiro item
+3. Third item
 
-### Citação
+### Quote
 
-> "A simplicidade é o último grau de sofisticação."
+> "Simplicity is the ultimate sophistication."
 > — Leonardo da Vinci
 
-### Tabela
+### Table
 
-| Linguagem | Ano | Paradigma |
-|-----------|-----|-----------|
-| Python    | 1991| Multi     |
-| Rust      | 2010| Sistemas  |
-| JavaScript| 1995| Multi     |
+| Language  | Year | Paradigm  |
+|-----------|------|-----------|
+| Python    | 1991 | Multi     |
+| Rust      | 2010 | Systems   |
+| JavaScript| 1995 | Multi     |
 
 ---
 
-### Links e Imagens
+### Links and Images
 
-Visite [Rust Lang](https://www.rust-lang.org/) para mais informações.
+Visit [Rust Lang](https://www.rust-lang.org/) for more information.
 
-*Fim do exemplo*
+*End of example*
 EOF
     
-    echo "✅ Arquivo 'exemplo.md' criado!"
+    echo "✅ File 'exemplo.md' created!"
     echo ""
-    echo "🧪 Teste o conversor com:"
+    echo "🧪 Test the converter with:"
     echo "  ./target/release/md2pdf -i exemplo.md"
     
 else
-    echo "❌ Erro na compilação!"
+    echo "❌ Compilation error!"
     exit 1
 fi

@@ -13,15 +13,15 @@ use syntect::util::LinesWithEndings;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Arquivo Markdown de entrada
+    /// Input Markdown file
     #[arg(short, long)]
     input: PathBuf,
 
-    /// Arquivo PDF de saída (padrão: mesmo nome do input com .pdf)
+    /// Output PDF file (default: same name as input with .pdf)
     #[arg(short, long)]
     output: Option<PathBuf>,
 
-    /// Margem da página em pixels (padrão: 50)
+    /// Page margin in pixels (default: 50)
     #[arg(short, long, default_value = "50")]
     margin: u32,
 }
@@ -29,24 +29,24 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    // Define arquivo de saída
+    // Define output file
     let output_path = args.output.unwrap_or_else(|| {
         let mut path = args.input.clone();
         path.set_extension("pdf");
         path
     });
 
-    // Lê o arquivo Markdown
+    // Read the Markdown file
     let markdown_content = fs::read_to_string(&args.input)
-        .with_context(|| format!("Erro ao ler arquivo: {:?}", args.input))?;
+        .with_context(|| format!("Error reading file: {:?}", args.input))?
 
-    // Converte Markdown para HTML
+    // Convert Markdown to HTML
     let html_content = markdown_to_html(&markdown_content)?;
 
-    // Gera o PDF
-    generate_pdf(&html_content, &output_path, args.margin)?;
+    // Generate the PDF
+    generate_pdf(&html_content, &output_path, args.margin)?
 
-    println!("✅ PDF gerado com sucesso: {:?}", output_path);
+    println!("✅ PDF generated successfully: {:?}", output_path);
     Ok(())
 }
 
@@ -60,7 +60,7 @@ fn markdown_to_html(markdown: &str) -> Result<String> {
     let parser = MdParser::new_ext(markdown, options);
     let mut html_output = String::new();
     
-    // Configuração do syntect
+    // Syntect configuration
     let ps = SyntaxSet::load_defaults_newlines();
     let ts = ThemeSet::load_defaults();
     let theme = &ts.themes["Solarized (dark)"];
@@ -69,7 +69,7 @@ fn markdown_to_html(markdown: &str) -> Result<String> {
     let mut in_code_block = false;
     let mut code_lang = String::new();
 
-    // Adiciona o CSS e estrutura HTML
+    // Add CSS and HTML structure
     html_output.push_str(&get_html_template());
     html_output.push_str("<body><div class=\"container\">");
 
@@ -182,7 +182,7 @@ fn highlight_code(code: &str, lang: &str, ps: &SyntaxSet, theme: &syntect::highl
     for line in LinesWithEndings::from(code) {
         let ranges: Vec<(Style, &str)> = highlighter
             .highlight_line(line, ps)
-            .context("Erro ao destacar linha")?;
+            .context("Error highlighting line")?
         let html = styled_line_to_highlighted_html(&ranges[..], IncludeBackground::No)?;
         highlighted.push_str(&html);
     }
@@ -200,7 +200,7 @@ fn escape_html(text: &str) -> String {
 
 fn get_html_template() -> String {
     r#"<!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -383,11 +383,11 @@ fn get_html_template() -> String {
 
 #[tokio::main]
 async fn generate_pdf(html: &str, output_path: &PathBuf, margin: u32) -> Result<()> {
-    // Salva HTML temporário
+    // Save temporary HTML
     let temp_html = output_path.with_extension("html");
     fs::write(&temp_html, html)?;
     
-    // Configura o navegador
+    // Configure the browser
     let options = LaunchOptions {
         headless: true,
         sandbox: false,
@@ -398,15 +398,15 @@ async fn generate_pdf(html: &str, output_path: &PathBuf, margin: u32) -> Result<
     let browser = Browser::new(options)?;
     let tab = browser.new_tab()?;
     
-    // Carrega o HTML
+    // Load the HTML
     let file_url = format!("file://{}", temp_html.display());
     tab.navigate_to(&file_url)?;
     tab.wait_until_navigated()?;
     
-    // Espera o conteúdo carregar
+    // Wait for content to load
     std::thread::sleep(std::time::Duration::from_secs(2));
     
-    // Gera o PDF
+    // Generate the PDF
     let pdf_options = headless_chrome::protocol::cdp::Page::PrintToPdfParams {
         landscape: Some(false),
         display_header_footer: Some(false),
@@ -429,7 +429,7 @@ async fn generate_pdf(html: &str, output_path: &PathBuf, margin: u32) -> Result<
     let pdf_data = tab.print_to_pdf(Some(pdf_options))?;
     fs::write(output_path, pdf_data)?;
     
-    // Remove arquivo temporário
+    // Remove temporary file
     fs::remove_file(&temp_html)?;
     
     Ok(())
