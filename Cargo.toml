@@ -1,0 +1,18 @@
+[package]
+name = "md2pdf"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+pulldown-cmark = "0.9"
+syntect = "5.0"
+headless_chrome = "1.0"
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1.0"
+base64 = "0.21"
+regex = "1.10"
+
+[[bin]]
+name = "md2pdf"
+path = "src/main.rs"
